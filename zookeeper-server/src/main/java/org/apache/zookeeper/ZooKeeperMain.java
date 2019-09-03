@@ -70,8 +70,10 @@ import org.apache.zookeeper.client.ZKClientConfig;
 import org.apache.zookeeper.admin.ZooKeeperAdmin;
 
 /**
- * The command line client to ZooKeeper.
- *
+ * @author gnehcgnaw
+ * @since  2019年09月02日10:14:01
+ *  The command line client to ZooKeeper.
+ *   zookeeper的命令行客户端
  */
 @InterfaceAudience.Public
 public class ZooKeeperMain {

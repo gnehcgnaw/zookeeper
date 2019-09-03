@@ -18,6 +18,7 @@
 
 package org.apache.zookeeper;
 
+import com.oracle.tools.packager.Log;
 import org.apache.jute.Record;
 import org.apache.yetus.audience.InterfaceAudience;
 import org.apache.zookeeper.AsyncCallback.ACLCallback;
@@ -625,6 +626,10 @@ public class ZooKeeper implements AutoCloseable {
         CONNECTING, ASSOCIATING, CONNECTED, CONNECTEDREADONLY,
         CLOSED, AUTH_FAILED, NOT_CONNECTED;
 
+        /**
+         * 判断连接是否存活
+         * @return
+         */
         public boolean isAlive() {
             return this != CLOSED && this != AUTH_FAILED;
         }
@@ -633,6 +638,7 @@ public class ZooKeeper implements AutoCloseable {
          * Returns whether we are connected to a server (which
          * could possibly be read-only, if this client is allowed
          * to go to read-only mode)
+         * 返回是否连接上服务器
          * */
         public boolean isConnected() {
             return this == CONNECTED || this == CONNECTEDREADONLY;
@@ -831,6 +837,10 @@ public class ZooKeeper implements AutoCloseable {
      * {@link StaticHostProvider}
      *
      * @param connectString
+     *           1. 逗号分隔的（地址:端口）对，每一个对应一个zk服务器，例如： "127.0.0.1:3000,127.0.0.1:3001,127.0.0.1:3002"
+     *           2. 如果使用了可选的chroot后缀，则示例如下所示："127.0.0.1:3000,127.0.0.1:3001,127.0.0.1:3002/app/a"，
+     *              其中客户端以"/app/a"为根，并且所有路径将与此根相关——即getting/setting/etc...，“/foo/bar”将导致在“/app/a/foo/bar”上运行操作（从服务器的角度）。
+     *
      *            comma separated host:port pairs, each corresponding to a zk
      *            server. e.g. "127.0.0.1:3000,127.0.0.1:3001,127.0.0.1:3002" If
      *            the optional chroot suffix is used the example would look
@@ -862,16 +872,27 @@ public class ZooKeeper implements AutoCloseable {
      * @throws IllegalArgumentException
      *             if an invalid chroot path is specified
      */
-    public ZooKeeper(String connectString, int sessionTimeout, Watcher watcher,
-            boolean canBeReadOnly, HostProvider aHostProvider,
-            ZKClientConfig clientConfig) throws IOException {
+    public ZooKeeper(
+                    //连接服务端的地址列表，多个地址用“,”隔开
+                    String connectString,
+                    //session超时时间
+                    int sessionTimeout,
+                    //观察者
+                    Watcher watcher,
+                    //是否是只读
+                    boolean canBeReadOnly,
+                    //zkClient 应该连接到的一组主机
+                    HostProvider aHostProvider,
+                    //zookeeperclient配置
+                    ZKClientConfig clientConfig) throws IOException {
         LOG.info("Initiating client connection, connectString=" + connectString
                 + " sessionTimeout=" + sessionTimeout + " watcher=" + watcher);
-
+        //判断clientConfig是否为null，如果为空就new一个
         if (clientConfig == null) {
             clientConfig = new ZKClientConfig();
         }
         this.clientConfig = clientConfig;
+        //获取默认的watcher管理器，
         watchManager = defaultWatchManager();
         watchManager.defaultWatcher = watcher;
         ConnectStringParser connectStringParser = new ConnectStringParser(
@@ -881,9 +902,22 @@ public class ZooKeeper implements AutoCloseable {
         cnxn = createConnection(connectStringParser.getChrootPath(),
                 hostProvider, sessionTimeout, this, watchManager,
                 getClientCnxnSocket(), canBeReadOnly);
+        //启动线程sendThread和eventThread
         cnxn.start();
     }
 
+    /**
+     * 创建连接
+     * @param chrootPath    选择的根路径，例如：127.0.0.1:3002/app/a 的chRootPath=/app/a
+     * @param hostProvider  可用服务器
+     * @param sessionTimeout    session超时时间
+     * @param zooKeeper     当前创建的zookeeper
+     * @param watcher   添加的watcher
+     * @param clientCnxnSocket
+     * @param canBeReadOnly
+     * @return
+     * @throws IOException
+     */
     // @VisibleForTesting
     protected ClientCnxn createConnection(String chrootPath,
             HostProvider hostProvider, int sessionTimeout, ZooKeeper zooKeeper,
@@ -3053,7 +3087,13 @@ public class ZooKeeper implements AutoCloseable {
         return cnxn.sendThread.getClientCnxnSocket().getLocalSocketAddress();
     }
 
+    /**
+     * 获取客户端CnxnSocket
+     * @return
+     * @throws IOException
+     */
     private ClientCnxnSocket getClientCnxnSocket() throws IOException {
+        //获取clientCnxnSocketName名称
         String clientCnxnSocketName = getClientConfig().getProperty(
                 ZKClientConfig.ZOOKEEPER_CLIENT_CNXN_SOCKET);
         if (clientCnxnSocketName == null) {

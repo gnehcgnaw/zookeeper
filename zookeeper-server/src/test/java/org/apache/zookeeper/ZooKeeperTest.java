@@ -42,12 +42,20 @@ import org.junit.Test;
 /**
  *
  * Testing ZooKeeper public methods
+ * 测试zookeeper的公开方法
  *
  */
 public class ZooKeeperTest extends ClientBase {
 
     private static final String LINE_SEPARATOR = System.getProperty("line.separator", "\n");
 
+    /**
+     * 测试递归删除
+     * @throws IOException
+     * @throws InterruptedException
+     * @throws CliException
+     * @throws KeeperException
+     */
     @Test
     public void testDeleteRecursive() throws IOException, InterruptedException, CliException, KeeperException {
         final ZooKeeper zk = createClient();
@@ -315,8 +323,13 @@ public class ZooKeeperTest extends ClientBase {
                         .processZKCmd(zkMain.cl));
     }
 
+    /**
+     * 测试创建一个持久化的节点
+     * @throws Exception
+     */
     @Test
     public void testCreatePersistentNode() throws Exception {
+        //创建一个client
         final ZooKeeper zk = createClient();
         ZooKeeperMain zkMain = new ZooKeeperMain(zk);
         String cmdstring = "create /node2";

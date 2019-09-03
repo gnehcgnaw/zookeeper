@@ -96,7 +96,7 @@ import org.slf4j.MDC;
  * This class manages the socket i/o for the client. ClientCnxn maintains a list
  * of available servers to connect to and "transparently" switches servers it is
  * connected to as needed.
- *
+ *此类管理客户端的套接字I/O。clientcnxn维护一个可连接到的可用服务器列表，并根据需要“透明地”切换它所连接到的服务器。
  */
 @SuppressFBWarnings({"EI_EXPOSE_REP", "EI_EXPOSE_REP2"})
 public class ClientCnxn {
@@ -176,6 +176,10 @@ public class ClientCnxn {
      * don't attempt to re-connect to the server if in the middle of closing the
      * connection (client sends session disconnect to server as part of close
      * operation)
+     *
+     * 调用close时设置为true。锁定连接，以便在关闭连接的过程中，我们不会尝试重新连接到服务器（客户端将会话断开连接作为关闭操作的一部分发送到服务器）
+     *
+     * 默认为false,表示还没有锁定连接
      */
     private volatile boolean closing = false;
     
@@ -398,8 +402,9 @@ public class ClientCnxn {
         connectTimeout = sessionTimeout / hostProvider.size();
         readTimeout = sessionTimeout * 2 / 3;
         readOnly = canBeReadOnly;
-
+        //创建demon线程SendThread
         sendThread = new SendThread(clientCnxnSocket);
+        //创建demon线程EventThread
         eventThread = new EventThread();
         this.clientConfig=zooKeeper.getClientConfig();
         initRequestTimeout();
@@ -797,12 +802,13 @@ public class ClientCnxn {
             super(msg);
         }
     }
-
+    //SendThread start >>>
     /**
      * This class services the outgoing request queue and generates the heart
      * beats. It also spawns the ReadThread.
      */
     class SendThread extends ZooKeeperThread {
+        //上次发送的ping数
         private long lastPingSentNs;
         private final ClientCnxnSocket clientCnxnSocket;
         private Random r = new Random();
@@ -1064,6 +1070,14 @@ public class ClientCnxn {
         // throws a LoginException: see startConnect() below.
         private boolean saslLoginFailed = false;
 
+        /**
+         * 开始连接
+         *      1. 判断是否是第一次连接，如果不是会服务端报错误：
+         *               Unable to read additional data from client sessionid 0x100000bc8760002, likely client has closed socket
+         *      2.
+         * @param addr
+         * @throws IOException
+         */
         private void startConnect(InetSocketAddress addr) throws IOException {
             // initializing it for new connection
             saslLoginFailed = false;
@@ -1100,7 +1114,7 @@ public class ClientCnxn {
                 }
             }
             logStartConnect(addr);
-
+            //创建nio连接
             clientCnxnSocket.connect(addr);
         }
 
@@ -1114,6 +1128,10 @@ public class ClientCnxn {
 
         private static final String RETRY_CONN_MSG =
             ", closing socket connection and attempting reconnect";
+
+        /**
+         *
+         */
         @Override
         public void run() {
             clientCnxnSocket.introduce(this, sessionId, outgoingQueue);
@@ -1123,8 +1141,15 @@ public class ClientCnxn {
             long lastPingRwServer = Time.currentElapsedTime();
             final int MAX_SEND_PING_INTERVAL = 10000; //10 seconds
             InetSocketAddress serverAddress = null;
+            //判断是否存活，只要不是CLOSED和AUTH_FAILED都算存活
             while (state.isAlive()) {
                 try {
+                    /*
+                     * 这个if判断内的逻辑是创建socket连接
+                     *  判断clientCnxnSocket是否建立连接，如果没有建立socket连接，分为两种情况：
+                     *  1. 已经锁定连接的，就不需要重新建立连接了；
+                     *  2. 建立连接。
+                     */
                     if (!clientCnxnSocket.isConnected()) {
                         // don't re-establish connection if we are closing
                         if (closing) {
@@ -1136,6 +1161,7 @@ public class ClientCnxn {
                         } else {
                             serverAddress = hostProvider.next(1000);
                         }
+                        //开始连接
                         startConnect(serverAddress);
                         clientCnxnSocket.updateLastSendAndHeard();
                     }
@@ -1437,6 +1463,7 @@ public class ClientCnxn {
             clientCnxnSocket.sendPacket(p);
         }
     }
+    //SendThread end <<<<<
 
     /**
      * Shutdown the send/event threads. This method should not be called

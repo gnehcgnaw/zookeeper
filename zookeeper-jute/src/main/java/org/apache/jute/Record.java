@@ -28,8 +28,10 @@ import java.io.IOException;
  */
 @InterfaceAudience.Public
 public interface Record {
+    //序列化
     public void serialize(OutputArchive archive, String tag)
         throws IOException;
+    //反序列化
     public void deserialize(InputArchive archive, String tag)
         throws IOException;
 }

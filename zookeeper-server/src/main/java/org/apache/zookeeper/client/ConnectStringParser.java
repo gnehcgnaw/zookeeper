@@ -28,6 +28,7 @@ import static org.apache.zookeeper.common.StringUtils.split;
 
 /**
  * A parser for ZooKeeper Client connect strings.
+ * zookeeper客户端连接字符串解析器
  * 
  * This class is not meant to be seen or used outside of ZooKeeper itself.
  * 
@@ -37,6 +38,7 @@ import static org.apache.zookeeper.common.StringUtils.split;
  * @see org.apache.zookeeper.ZooKeeper
  */
 public final class ConnectStringParser {
+    //默认端口
     private static final int DEFAULT_PORT = 2181;
 
     private final String chrootPath;

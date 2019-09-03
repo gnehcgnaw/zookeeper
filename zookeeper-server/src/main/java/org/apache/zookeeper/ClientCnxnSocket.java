@@ -40,10 +40,12 @@ import org.slf4j.LoggerFactory;
 /**
  * A ClientCnxnSocket does the lower level communication with a socket
  * implementation.
- * 
+ * clientcnxnsocket与socket实现进行低级通信。
+ *
  * This code has been moved out of ClientCnxn so that a Netty implementation can
  * be provided as an alternative to the NIO socket code.
- * 
+ * 此代码已从clientcnxn${@link ClientCnxn}中移出，因此可以提供netty实现作为NIO套接字代码的替代方案。
+ *
  */
 abstract class ClientCnxnSocket {
     private static final Logger LOG = LoggerFactory.getLogger(ClientCnxnSocket.class);

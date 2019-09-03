@@ -25,6 +25,7 @@ import java.util.Collection;
 
 /**
  * A set of hosts a ZooKeeper client should connect to.
+ * zkClient 应该连接到的一组主机
  * 
  * Classes implementing this interface must guarantee the following:
  * 
