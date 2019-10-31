@@ -18,7 +18,6 @@
 
 package org.apache.zookeeper;
 
-import com.oracle.tools.packager.Log;
 import org.apache.jute.Record;
 import org.apache.yetus.audience.InterfaceAudience;
 import org.apache.zookeeper.AsyncCallback.ACLCallback;
@@ -539,6 +538,7 @@ public class ZooKeeper implements AutoCloseable {
 
     /**
      * Register a watcher for a particular path.
+     * 为特定路径注册一个watcher
      */
     public abstract class WatchRegistration {
         private Watcher watcher;
@@ -1473,6 +1473,7 @@ public class ZooKeeper implements AutoCloseable {
     }
 
     /**
+     * 将chroot预先发送到客户机路径（如果存在）
      * Prepend the chroot to the client path (if present). The expectation of
      * this function is that the client path has been validated before this
      * function is called
@@ -1551,14 +1552,18 @@ public class ZooKeeper implements AutoCloseable {
         throws KeeperException, InterruptedException
     {
         final String clientPath = path;
+        //校验路径
         PathUtils.validatePath(clientPath, createMode.isSequential());
+        //校验创建模式和过期时间
         EphemeralType.validateTTL(createMode, -1);
-
+        //拼接path: sercerPath = chrootPath+clientPath
         final String serverPath = prependChroot(clientPath);
-
+        //创建请求头，并赋值
         RequestHeader h = new RequestHeader();
         h.setType(createMode.isContainer() ? ZooDefs.OpCode.createContainer : ZooDefs.OpCode.create);
+        //创建node的请求体
         CreateRequest request = new CreateRequest();
+        //创建node的响应体
         CreateResponse response = new CreateResponse();
         request.setData(data);
         request.setFlags(createMode.toFlag());
@@ -1567,6 +1572,7 @@ public class ZooKeeper implements AutoCloseable {
             throw new KeeperException.InvalidACLException();
         }
         request.setAcl(acl);
+        //提交请求
         ReplyHeader r = cnxn.submitRequest(h, request, response, null);
         if (r.getErr() != 0) {
             throw KeeperException.create(KeeperException.Code.get(r.getErr()),

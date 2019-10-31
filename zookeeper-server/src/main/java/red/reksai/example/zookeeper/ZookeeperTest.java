@@ -19,7 +19,7 @@ public class ZookeeperTest {
             ZooKeeper zooKeeper = new ZooKeeper(connectString, sessionTimeout, new Watcher() {
                 @Override
                 public void process(WatchedEvent event) {
-                    System.out.println("连接成功"+event);
+                    System.out.println("连接成功："+event);
                 }
             });
 
@@ -31,7 +31,8 @@ public class ZookeeperTest {
              * 	at org.apache.zookeeper.ZooKeeper.create(ZooKeeper.java:1538)
              * 	at red.reksai.example.zookeeper.ZookeeperClientTest.main(ZookeeperClientTest.java:22)
              */
-           zooKeeper.create("/testnode2","123456".getBytes(),ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+            String responseMessage = zooKeeper.create("/testnode", "123456".getBytes(), ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT_SEQUENTIAL);
+            System.out.println(responseMessage);
         } catch (IOException e) {
             e.printStackTrace();
         } catch (InterruptedException e) {

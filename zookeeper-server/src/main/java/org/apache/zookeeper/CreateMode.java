@@ -23,6 +23,8 @@ import org.slf4j.LoggerFactory;
 
 /***
  *  CreateMode value determines how the znode is created on ZooKeeper.
+ *
+ *  createMode值确定如何在zookeeper上创建znode。
  */
 @InterfaceAudience.Public
 public enum CreateMode {
@@ -53,6 +55,11 @@ public enum CreateMode {
      * Given this property, you should be prepared to get
      * {@link org.apache.zookeeper.KeeperException.NoNodeException}
      * when creating children inside of this container node.
+     *
+     * znode将是一个容器节点。
+     * container节点是一些特殊用途的节点，可用于诸如leader、lock等。
+     * 当删除容器的最后一个子级时，容器将成为将来某个时候服务器要删除的候选容器。
+     * 给定此属性，在该容器节点内创建子级时，应准备获取
      */
     CONTAINER (4, false, false, true, false),
     /**

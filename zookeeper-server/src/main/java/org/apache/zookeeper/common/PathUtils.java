@@ -36,6 +36,12 @@ public class PathUtils {
 	}
 	
     /**
+     * 条件：
+     *  1. 不能为null
+     *  2. 长度不等于0
+     *  3. 首字符必须为“/”
+     *  4. 长度为1，说明是根
+     *  5. 最后一个字符不能为“/”
      * Validate the provided znode path string
      * @param path znode path string
      * @throws IllegalArgumentException if the path is invalid

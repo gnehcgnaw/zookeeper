@@ -210,6 +210,8 @@ public class ClientCnxn {
     /**
      * If any request's response in not received in configured requestTimeout
      * then it is assumed that the response packet is lost.
+     *
+     * 如果在配置的RequestTimeout中未接收到任何请求的响应，则假定响应数据包丢失。
      */
     private long requestTimeout;
 
@@ -1282,6 +1284,7 @@ public class ClientCnxn {
                 }
             }
             synchronized (state) {
+                //到这一点时，它保证以后排队的发送到outgoingqueue的包将收到死亡通知。
                 // When it comes to this point, it guarantees that later queued
                 // packet to outgoingQueue will be notified of death.
                 cleanup();
@@ -1533,17 +1536,30 @@ public class ClientCnxn {
         return xid++;
     }
 
+
     public ReplyHeader submitRequest(RequestHeader h, Record request,
             Record response, WatchRegistration watchRegistration)
             throws InterruptedException {
         return submitRequest(h, request, response, watchRegistration, null);
     }
 
+    /**
+     * 提交请求
+     * @param h  请求头
+     * @param request   请求体
+     * @param response  响应体
+     * @param watchRegistration  watcher注册
+     * @param watchDeregistration watcher注销
+     * @return
+     * @throws InterruptedException
+     */
     public ReplyHeader submitRequest(RequestHeader h, Record request,
             Record response, WatchRegistration watchRegistration,
             WatchDeregistration watchDeregistration)
             throws InterruptedException {
+        //创建一个回复头
         ReplyHeader r = new ReplyHeader();
+        //创建一个数据包
         Packet packet = queuePacket(h, r, request, response, null, null, null,
                 null, watchRegistration, watchDeregistration);
         synchronized (packet) {
@@ -1609,6 +1625,20 @@ public class ClientCnxn {
                 ctx, watchRegistration, null);
     }
 
+    /**
+     *
+     * @param h
+     * @param r
+     * @param request
+     * @param response
+     * @param cb
+     * @param clientPath
+     * @param serverPath
+     * @param ctx
+     * @param watchRegistration
+     * @param watchDeregistration
+     * @return
+     */
     public Packet queuePacket(RequestHeader h, ReplyHeader r, Record request,
             Record response, AsyncCallback cb, String clientPath,
             String serverPath, Object ctx, WatchRegistration watchRegistration,
@@ -1628,6 +1658,11 @@ public class ClientCnxn {
         // 1. synchronize with the final cleanup() in SendThread.run() to avoid race
         // 2. synchronized against each packet. So if a closeSession packet is added,
         // later packet will be notified.
+
+        //这里的synchronized块有两个用途：
+        // 1。与sendthread.run（）中的final cleanup（）同步以避免争用
+        // 2。与每个数据包同步。因此，如果添加closesession数据包，
+        // 将通知后面的数据包。
         synchronized (state) {
             if (!state.isAlive() || closing) {
                 conLossPacket(packet);
@@ -1637,6 +1672,7 @@ public class ClientCnxn {
                 if (h.getType() == OpCode.closeSession) {
                     closing = true;
                 }
+                //将数据表添加到outgoingQueue中
                 outgoingQueue.add(packet);
             }
         }

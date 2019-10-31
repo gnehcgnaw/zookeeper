@@ -26,11 +26,17 @@ import org.apache.yetus.audience.InterfaceAudience;
 import org.apache.zookeeper.data.ACL;
 import org.apache.zookeeper.data.Id;
 
+/**
+ * 参数表
+ */
 @InterfaceAudience.Public
 public class ZooDefs {
    
    final public static String CONFIG_NODE = "/zookeeper/config";
 
+    /**
+     * 操作码
+     */
    @InterfaceAudience.Public
     public interface OpCode {
         public final int notification = 0;
